@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 图片背景 -->
+  <rect x="2" y="6" width="28" height="20" rx="2" fill="#3498db"/>
+  
+  <!-- 图片内容简化表示 -->
+  <rect x="4" y="8" width="24" height="12" fill="#2980b9"/>
+  <path d="M4 14 L10 12 L16 16 L24 10 L28 14 L28 20 L4 20 Z" fill="#1f6aa5"/>
+  
+  <!-- 字幕条 -->
+  <rect x="4" y="20" width="24" height="4" fill="rgba(0,0,0,0.6)"/>
+  
+  <!-- 字幕文本符号 -->
+  <rect x="8" y="21" width="3" height="2" fill="white"/>
+  <rect x="12" y="21" width="4" height="2" fill="white"/>
+  <rect x="17" y="21" width="2" height="2" fill="white"/>
+  <rect x="20" y="21" width="4" height="2" fill="white"/>
+</svg> 
