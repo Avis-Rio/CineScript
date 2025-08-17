@@ -1025,85 +1025,7 @@ function App() {
 
       await drawImageSafely()
 
-      // 绘制字幕 - 使用比例化参数，按输入顺序从底部向上绘制
-      const lines = subtitles.split('\n').filter(line => line.trim() !== '')
-      if (lines.length > 0) {
-        // 使用原始图片尺寸计算比例化参数
-        const scaledParams = calculateScaledParams(imgWidth, imgHeight)
-        
-        // 计算字幕区域的边界
-        const subtitleAreaX = imageX
-        const subtitleAreaY = imageY
-        const subtitleAreaWidth = imgWidth
-        const subtitleAreaHeight = imgHeight
-        
-        // 按输入顺序绘制，第一行在最底部
-        lines.forEach((line, index) => {
-          // 计算Y坐标：第一行在图片区域最底部，后续行依次向上
-          const y = subtitleAreaY + subtitleAreaHeight - scaledParams.height * (index + 1)
-          
-          // 绘制字幕背景
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.55)'
-          ctx.fillRect(subtitleAreaX, y, subtitleAreaWidth, scaledParams.height)
-          
-          // 绘制分割线（除了第一行，即最底部的行）
-          if (index > 0) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(subtitleAreaX, y)
-            ctx.lineTo(subtitleAreaX + subtitleAreaWidth, y)
-            ctx.stroke()
-          }
-          
-          // 设置文字样式
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.font = `${subtitleStyle.fontWeight} ${scaledParams.fontSize}px ${subtitleStyle.fontFamily}`
-          
-          const textY = y + scaledParams.height / 2
-          const textX = subtitleAreaX + subtitleAreaWidth / 2
-          
-          // 绘制文字轮廓（使用比例化轮廓宽度）
-          ctx.lineWidth = scaledParams.outlineWidth
-          ctx.strokeStyle = subtitleStyle.outlineColor
-          ctx.strokeText(line, textX, textY)
-          
-          // 填充文字
-          ctx.fillStyle = subtitleStyle.fontColor
-          ctx.fillText(line, textX, textY)
-        })
-      }
-
-      // 绘制水印（根据参数决定是否绘制）
-      if (withWatermark) {
-        ctx.save()
-        ctx.font = 'normal 14px Arial'
-        ctx.globalAlpha = 0.7
-        
-        const watermarkText = 'Avis@CineScript'
-        const watermarkMetrics = ctx.measureText(watermarkText)
-        const watermarkWidth = watermarkMetrics.width + 12
-        const watermarkHeight = 20
-        
-        // 水印位置：在图片区域的右下角
-        const watermarkX = imageX + imgWidth - watermarkWidth - 10
-        const watermarkY = imageY + imgHeight - watermarkHeight - 10
-        
-        // 水印背景
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'
-        ctx.fillRect(watermarkX, watermarkY, watermarkWidth, watermarkHeight)
-        
-        // 水印文字
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(watermarkText, watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2)
-        
-        ctx.restore()
-      }
-
-      // 绘制边框（如果启用）
+      // 绘制边框（如果启用）- 先绘制边框
       if (borderStyle.enabled) {
         ctx.save()
         
@@ -1264,6 +1186,118 @@ function App() {
         
         ctx.restore()
       }
+
+      // 计算边框占用空间的函数
+      const calculateBorderSpace = () => {
+        if (!borderStyle.enabled) {
+          return { top: 0, right: 0, bottom: 0, left: 0 }
+        }
+        
+        switch (borderStyle.preset) {
+          case 'white':
+            const whiteBorderWidth = Math.max(12, canvas.width * 0.03)
+            return { top: whiteBorderWidth, right: whiteBorderWidth, bottom: whiteBorderWidth, left: whiteBorderWidth }
+            
+          case 'vintage':
+            const vintageBorderWidth = Math.max(24, canvas.width * 0.06)
+            return { top: vintageBorderWidth, right: vintageBorderWidth, bottom: vintageBorderWidth, left: vintageBorderWidth }
+            
+          case 'instagram':
+          case 'apple':
+            // 这些样式主要是描边，不占用内部空间
+            return { top: 0, right: 0, bottom: 0, left: 0 }
+            
+          case 'simple':
+          case 'none':
+          default:
+            // 简单边框占用的空间等于边框宽度
+            const borderWidth = borderStyle.width
+            return { top: borderWidth, right: borderWidth, bottom: borderWidth, left: borderWidth }
+        }
+      }
+
+      // 绘制字幕 - 使用比例化参数，按输入顺序从底部向上绘制
+      const lines = subtitles.split('\n').filter(line => line.trim() !== '')
+      if (lines.length > 0) {
+        // 使用画布尺寸计算比例化参数，确保字幕随边框一起扩展
+        const scaledParams = calculateScaledParams(canvasWidth, canvasHeight)
+        
+        // 计算边框占用的空间
+        const borderSpace = calculateBorderSpace()
+        
+        // 计算字幕区域的边界（考虑边框占用空间）
+        const subtitleAreaX = imageX + borderSpace.left
+        const subtitleAreaY = imageY + borderSpace.top
+        const subtitleAreaWidth = imgWidth - borderSpace.left - borderSpace.right
+        const subtitleAreaHeight = imgHeight - borderSpace.top - borderSpace.bottom
+        
+        // 按输入顺序绘制，第一行在最底部
+        lines.forEach((line, index) => {
+          // 计算Y坐标：第一行在图片内容区域最底部（考虑边框占用空间），后续行依次向上
+          const y = imageY + imgHeight - borderSpace.bottom - scaledParams.height * (index + 1)
+          
+          // 绘制字幕背景（使用完整画布宽度）
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.55)'
+          ctx.fillRect(0, y, canvasWidth, scaledParams.height)
+          
+          // 绘制分割线（除了第一行，即最底部的行）
+          if (index > 0) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(0, y)
+            ctx.lineTo(canvasWidth, y)
+            ctx.stroke()
+          }
+          
+          // 设置文字样式
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.font = `${subtitleStyle.fontWeight} ${scaledParams.fontSize}px ${subtitleStyle.fontFamily}`
+          
+          const textY = y + scaledParams.height / 2
+          const textX = subtitleAreaX + subtitleAreaWidth / 2
+          
+          // 绘制文字轮廓（使用比例化轮廓宽度）
+          ctx.lineWidth = scaledParams.outlineWidth
+          ctx.strokeStyle = subtitleStyle.outlineColor
+          ctx.strokeText(line, textX, textY)
+          
+          // 填充文字
+          ctx.fillStyle = subtitleStyle.fontColor
+          ctx.fillText(line, textX, textY)
+        })
+      }
+
+      // 绘制水印（根据参数决定是否绘制）
+      if (withWatermark) {
+        ctx.save()
+        ctx.font = 'normal 14px Arial'
+        ctx.globalAlpha = 0.7
+        
+        const watermarkText = 'Avis@CineScript'
+        const watermarkMetrics = ctx.measureText(watermarkText)
+        const watermarkWidth = watermarkMetrics.width + 12
+        const watermarkHeight = 20
+        
+        // 水印位置：在图片区域的右下角
+        const watermarkX = imageX + imgWidth - watermarkWidth - 10
+        const watermarkY = imageY + imgHeight - watermarkHeight - 10
+        
+        // 水印背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'
+        ctx.fillRect(watermarkX, watermarkY, watermarkWidth, watermarkHeight)
+        
+        // 水印文字
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(watermarkText, watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2)
+        
+        ctx.restore()
+      }
+
+
 
       // 生成并下载图片
       const downloadImage = (): Promise<void> => {
@@ -1441,7 +1475,17 @@ function App() {
                   )}
                 </div>
                 
-                <p className="text-sm text-stone-500 text-center">{uploadStatus}</p>
+                <p 
+                  className="text-sm text-stone-500 text-center px-2 break-words overflow-hidden" 
+                  style={{ 
+                    wordBreak: 'break-all',
+                    overflowWrap: 'break-word',
+                    lineHeight: '1.4'
+                  }}
+                  title={uploadStatus}
+                >
+                  {uploadStatus}
+                </p>
               </CardContent>
             </Card>
 
@@ -1635,14 +1679,39 @@ function App() {
                         }
                       }
                       
+                      // 计算边框占用的空间（预览版本）
+                      const calculatePreviewBorderSpace = () => {
+                        if (!borderStyle.enabled) return { top: 0, bottom: 0, left: 0, right: 0 }
+                        
+                        const scaleRatio = imageNaturalSize.width > 0 ? displayRect.width / imageNaturalSize.width : 1
+                        const scaledBorderWidth = borderStyle.width * scaleRatio
+                        
+                        switch (borderStyle.preset) {
+                          case 'simple':
+                          case 'none':
+                          default:
+                            return {
+                              top: scaledBorderWidth,
+                              bottom: scaledBorderWidth,
+                              left: scaledBorderWidth,
+                              right: scaledBorderWidth
+                            }
+                        }
+                      }
+                      
+                      const borderSpace = calculatePreviewBorderSpace()
                       const scaledParams = calculateScaledParams(displayRect.width, displayRect.height)
+                      
+                      // 计算字幕可用区域（扣除边框占用空间）
+                      const subtitleAreaWidth = displayRect.width - borderSpace.left - borderSpace.right
+                      const subtitleAreaHeight = displayRect.height - borderSpace.top - borderSpace.bottom
                       
                       return (
                         <div 
                           className="absolute bottom-0 left-0"
                           style={{
                             left: `${displayRect.x}px`,
-                            bottom: `${displayRect.y}px`,
+                            bottom: `0px`,
                             width: `${displayRect.width}px`,
                             zIndex: 3
                           }}
