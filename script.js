@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 创建新水印
         const watermark = document.createElement('div');
         watermark.className = 'watermark';
-        watermark.textContent = '@Avis';
+        watermark.textContent = 'Avis@CineScript';
         imageWrapper.appendChild(watermark);
     }
     
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.globalAlpha = 0.7; // 设置全局透明度
                 
                 // 水印设置
-                const watermarkText = '@Avis';
+                const watermarkText = 'Avis@CineScript';
                 const watermarkWidth = ctx.measureText(watermarkText).width + 12;
                 const watermarkHeight = 20;
                 const watermarkX = imageWidth - watermarkWidth - 10;
