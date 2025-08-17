@@ -42,4 +42,6 @@ react-app/image-caption-generator/node_modules/
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+react-app/image-caption-generator/node_modules/
+react-app/image-caption-generator/dist/
+react-app/image-caption-generator/.vite/
