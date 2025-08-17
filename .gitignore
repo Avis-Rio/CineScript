@@ -28,8 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # 依赖目录
+node_modules/
 /node_modules/
 /bower_components/
+react-app/image-caption-generator/node_modules/
 
 # 构建输出
 /dist/
